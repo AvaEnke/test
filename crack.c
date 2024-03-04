@@ -54,7 +54,7 @@ void *crack_pass(void *arg) {
 
 int main(int argc, char* argv[]) {
     if (argc != 4) {//check number of command line arguments
-        perror("Too many or too little arguments, expected: crack <threads> <keysize> <target>")
+        perror("Too many or too little arguments, expected: crack <threads> <keysize> <target>");
         return 1;
     }
 
