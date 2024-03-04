@@ -11,9 +11,8 @@ struct thread_input {
     int keysize;
     unsigned long start;
     unsigned long end;
+    int *flag_pass; // Changed variable name
 };
-
-volatile int passwordFound = 0;
 
 void *crack_pass(void *arg) {
     struct thread_input *thread_args = (struct thread_input *)arg;
@@ -22,7 +21,7 @@ void *crack_pass(void *arg) {
     memset(test_p, 'a', thread_args->keysize);
     test_p[thread_args->keysize] = '\0';
 
-    for (unsigned long current = thread_args->start; current <= thread_args->end && !passwordFound; ++current) {
+    for (unsigned long current = thread_args->start; current <= thread_args->end && !(*thread_args->flag_pass); ++current) {
         unsigned long temp = current;
         for (int i = 0; i < thread_args->keysize; i++) {
             test_p[i] = 'a' + (temp % 26);
@@ -32,7 +31,7 @@ void *crack_pass(void *arg) {
 
         char *hashed = crypt_r(test_p, thread_args->salt, &data);
         if (strcmp(thread_args->target, hashed) == 0) {
-            passwordFound = 1; // Indicate that the password has been found
+            *(thread_args->flag_pass) = 1; // Set the value of flag_pass to 1
             char *result = strdup(test_p); // Dynamically allocate memory for the found password
             return result; // Return the found password
         }
@@ -42,6 +41,7 @@ void *crack_pass(void *arg) {
 
 int main(int argc, char* argv[]) {
     if (argc != 4) {
+        // Change the error message
         fprintf(stderr, "Usage: crack <threads> <keysize> <target>\n");
         return 1;
     }
@@ -68,9 +68,11 @@ int main(int argc, char* argv[]) {
     void *thread_result;
     char *found_pass = NULL;
 
+    int flag_pass = 0; // Changed variable name
+
     for (int i = 0; i < threads; i++) {
         unsigned long end = start + portion - 1 + (i < extra);
-        thread_args[i] = (struct thread_input){target_m, salt, keysize_m, start, end};
+        thread_args[i] = (struct thread_input){target_m, salt, keysize_m, start, end, &flag_pass}; // Pass the address of flag_pass
         pthread_create(&thread_ids[i], NULL, crack_pass, &thread_args[i]);
         start = end + 1;
     }
